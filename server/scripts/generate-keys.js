@@ -1,4 +1,3 @@
-// const { sha256, keccak } = require('ethereum-cryptography');
 const { secp256k1: secp } = require('ethereum-cryptography/secp256k1');
 const { toHex } = require('ethereum-cryptography/utils');
 
