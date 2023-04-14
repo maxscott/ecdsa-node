@@ -26,8 +26,7 @@ function privateHexToPublicHex(privateHex) {
 
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
-  const sender = privateHexToPublicHex(address);
-  const balance = balances[sender] || 0;
+  const balance = balances[address] || 0;
   res.send({ balance });
 });
 
