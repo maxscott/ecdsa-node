@@ -1,6 +1,7 @@
 const express = require("express");
 const { secp256k1: secp } = require('ethereum-cryptography/secp256k1');
 const { toHex, hexToBytes } = require('ethereum-cryptography/utils');
+const verifyMessage = require('./lib/verify-message');
 const app = express();
 const cors = require("cors");
 const port = 3042;
@@ -20,10 +21,6 @@ const balances = {
   "03f857a2cea9b02f2b4e83c19a92750a00831226bfca5c8226fc111fbe2dc09a04": 75,
 };
 
-function privateHexToPublicHex(privateHex) {
-  return toHex(secp.getPublicKey(hexToBytes(privateHex)));
-}
-
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
   const balance = balances[address] || 0;
@@ -31,9 +28,19 @@ app.get("/balance/:address", (req, res) => {
 });
 
 app.post("/send", (req, res) => {
-  const { sender: privateHex, recipient, amount } = req.body;
+  const {
+    publicKey: pub,
+    message: msg,
+    signature: sig
+  } = req.body;
+  const sender = pub;
 
-  const sender = privateHexToPublicHex(privateHex);
+  if (!verifyMessage({ pub, msg, sig })) {
+    res.status(401).send({ message: "Couldn't verify the message" });
+    return;
+  }
+
+  const { recipient, amount } = JSON.parse(msg);
 
   setInitialBalance(sender);
   setInitialBalance(recipient);
