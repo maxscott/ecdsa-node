@@ -1,6 +1,4 @@
 const express = require("express");
-const { secp256k1: secp } = require('ethereum-cryptography/secp256k1');
-const { toHex, hexToBytes } = require('ethereum-cryptography/utils');
 const verifyMessage = require('./lib/verify-message');
 const app = express();
 const cors = require("cors");
@@ -8,12 +6,6 @@ const port = 3042;
 
 app.use(cors());
 app.use(express.json());
-
-// const privateKeys = [
-//   "4aa3db328934bc2e788d4c0fe527ecf71c278e51f316137cddc92d5cbea601cc",
-//   "28867fc3dcc997d3996394d72afa7b658cc14ab06354fd0b75d2322036c1f05c",
-//   "4e9fcbbbbf21a81e02951b1a962e2c8e8fa039c4db7cea6dd6c63d9c0f19b75e"
-// ];
 
 const balances = {
   "02092dab5690179dade8851584c5622b981ab59739a500088277872ec4b423d2a4": 100,
@@ -40,12 +32,16 @@ app.post("/send", (req, res) => {
     return;
   }
 
-  const { recipient, amount } = JSON.parse(msg);
+  const { recipient, amount: amountString } = JSON.parse(msg);
+  const amount = parseInt(amountString);
 
   setInitialBalance(sender);
   setInitialBalance(recipient);
 
-  if (balances[sender] < amount) {
+  if (amount < 1) {
+    res.status(400).send({ message: "*Too* small." });
+  }
+  else if (balances[sender] < amount) {
     res.status(400).send({ message: "Not enough funds!" });
   } else {
     balances[sender] -= amount;

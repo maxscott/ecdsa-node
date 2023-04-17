@@ -1,7 +1,9 @@
 import { useState } from "react";
 import server from "./server";
+import wallets from "./fakeWallets";
+import { buildMessage } from './buildMessage';
 
-function Transfer({ address, setBalance }) {
+function Transfer({ wallet, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -10,18 +12,21 @@ function Transfer({ address, setBalance }) {
   async function transfer(evt) {
     evt.preventDefault();
 
+    const message = buildMessage(recipient, sendAmount, wallet.privateKey);
+
     try {
       const {
         data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
-        amount: parseInt(sendAmount),
-        recipient,
-      });
+      } = await server.post(`send`, message);
       setBalance(balance);
     } catch (ex) {
       alert(ex.response.data.message);
     }
+  }
+
+  async function onChange(evt) {
+    const newWallet = wallets[evt.target.selectedIndex-1];
+    setRecipient(newWallet.publicKey);
   }
 
   return (
@@ -38,12 +43,15 @@ function Transfer({ address, setBalance }) {
       </label>
 
       <label>
-        Recipient
-        <input
-          placeholder="Type an address, for example: 0x2"
-          value={recipient}
-          onChange={setValue(setRecipient)}
-        ></input>
+        Recipient Address
+        <select name="Address" onInput={onChange}>
+          <option key="0" id="0">--Choose--</option>
+          {wallets.map((w, i) => {
+            return <option key={i+1} id={i+1}
+              disabled={w.publicKey === wallet.publicKey}
+            >{w.publicKey.slice(0,10)}...</option>
+          })}
+        </select>
       </label>
 
       <input type="submit" className="button" value="Transfer" />
